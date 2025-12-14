@@ -1,0 +1,75 @@
+meta {
+  name: Process Invoice
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:7071/api/invoice/process
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "invoice_id": "INV-2025-001",
+    "pdf_path": "c:/Users/.../sample-invoice.pdf",
+    "metadata": {
+      "customer": "Acme Corp",
+      "upload_date": "2025-11-03",
+      "uploaded_by": "user@example.com",
+      "source": "local_file"
+    }
+  }
+}
+
+docs {
+  # Process Invoice
+  
+  Starts the invoice processing orchestration workflow.
+  
+  This endpoint:
+  - Accepts invoice metadata and PDF URL
+  - Starts the Durable Functions orchestration
+  - Returns instance ID and status URLs for tracking
+  
+  The workflow will:
+  1. Split PDF into pages/images
+  2. Process each page in parallel with LLM (mocked)
+  3. Aggregate all extracted data
+  4. Return final structured invoice data
+
+  ## Process Invoice (Local File) - WITH AZURITE STORAGE
+  
+  Processes a real PDF from the local file system and stores it in Azurite blob storage.
+  
+  This endpoint:
+  - Reads actual PDF from local path
+  - Starts the Durable Functions orchestration
+  - Returns instance ID and status URLs for tracking
+  
+  The workflow will:
+  1. Upload PDF to Azurite blob storage (pdfs/{invoice_id}.pdf)
+  2. Split PDF into page images using PyMuPDF
+  3. Upload each page image to Azurite (pdfs/{invoice_id}/page_{num}.png)
+  4. Process each page in parallel with LLM (mocked extraction with real images)
+  5. Aggregate all extracted data
+  6. Return final structured invoice data
+  
+  Storage Structure:
+  - PDFs Container:
+    - PDF: http://127.0.0.1:10000/devstoreaccount1/pdfs/INV-2025-001.pdf
+  
+  - Images Container:
+    - Page 0: http://127.0.0.1:10000/devstoreaccount1/images/INV-2025-001/page_0.png
+    - Page 1: http://127.0.0.1:10000/devstoreaccount1/images/INV-2025-001/page_1.png
+  
+  View blobs in Azure Storage Explorer:
+  1. Open Azure Storage Explorer
+  2. Connect to Local Storage Emulator (Azurite)
+  3. Navigate to Blob Containers:
+     - pdfs > Browse PDF files
+     - images > Browse page images by invoice ID folder
+  
+  Note: Requires Azurite running on default ports (10000 for blobs)
+}

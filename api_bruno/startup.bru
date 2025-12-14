@@ -1,0 +1,33 @@
+meta {
+  name: Initialize Azurite Storage
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://localhost:7071/api/startup
+  body: none
+  auth: none
+}
+
+docs {
+  # Initialize Azurite Storage
+  
+  Call this endpoint once after starting the function app to initialize Azurite storage.
+  
+  This will:
+  - Create the 'pdfs' container in Azurite if it doesn't exist
+  - Create the 'images' container in Azurite if it doesn't exist
+  - Prepare blob storage for PDF and image uploads
+  
+  Returns:
+  ```json
+  {
+    "status": "success",
+    "message": "Azurite storage initialized successfully",
+    "containers": ["pdfs", "images"]
+  }
+  ```
+  
+  Note: This is idempotent - safe to call multiple times
+}

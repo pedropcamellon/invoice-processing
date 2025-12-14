@@ -1,0 +1,31 @@
+meta {
+  name: Get Orchestration Status
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:7071/runtime/webhooks/durabletask/instances/{instanceId}
+  body: none
+  auth: none
+}
+
+params:path {
+  instanceId: REPLACE_WITH_INSTANCE_ID
+}
+
+docs {
+  # Get Orchestration Status
+  
+  Query the status of an invoice processing orchestration.
+  
+  Replace `{instanceId}` with the instance ID returned from the "Process Invoice" request.
+  
+  Possible statuses:
+  - Pending: Orchestration queued but not started
+  - Running: Orchestration in progress
+  - Completed: Orchestration finished successfully
+  - Failed: Orchestration encountered an error
+  
+  The `output` field will contain the final invoice data when status is "Completed".
+}
