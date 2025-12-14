@@ -1,13 +1,13 @@
 [project]
-name = "invoice-processing-wf"
+name = "invoice-processing"
 version = "0.1.0"
 description = "Azure Durable Functions - Invoice Processing with PDF support"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = "==3.11.12"
 dependencies = [
-    "azure-functions-durable>=1.4.0",
-    "azure-functions>=1.24.0",
-    "azure-storage-blob>=12.19.0",
-    "pillow>=10.0.0",
-    "pymupdf>=1.24.0",
+    "azure-functions-durable==1.4.0",
+    "azure-functions==1.24.0",
+    "azure-storage-blob==12.19.0",
+    "pillow==10.0.0",
+    "pymupdf==1.24.0",
 ]
