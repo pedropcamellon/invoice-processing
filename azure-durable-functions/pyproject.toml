@@ -1,7 +1,7 @@
 [project]
-name = "invoice-processing"
+name = "workflow-orchestration-adf"
 version = "0.1.0"
-description = "Azure Durable Functions - Invoice Processing with PDF support"
+description = "Azure Durable Functions implementation of invoice processing workflow (part of workflow-orchestration-poc monorepo)"
 readme = "README.md"
 requires-python = "==3.11.12"
 dependencies = [
