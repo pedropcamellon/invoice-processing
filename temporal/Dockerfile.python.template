@@ -1,0 +1,34 @@
+# Dockerfile Template for Python Services
+# Copy this to services/<service-name>/Dockerfile and adjust TASK_QUEUE
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install uv for fast dependency installation
+RUN pip install --no-cache-dir uv
+
+# Copy dependency file
+COPY pyproject.toml ./
+
+# Install dependencies using uv with fallback to minimal deps
+# Falls back to installing just temporalio + pydantic if pyproject.toml installation fails
+RUN uv pip install --system --no-cache-dir -e . 2>/dev/null || \
+    uv pip install --system --no-cache-dir pydantic temporalio
+
+# Copy application code
+COPY *.py ./
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    TEMPORAL_ADDRESS=${TEMPORAL_ADDRESS:-temporal:7233}
+
+# Optional: Set TASK_QUEUE based on service (e.g., upload-pdf-q, split-pdf-q)
+# ENV TASK_QUEUE=<service-task-queue>
+
+# Health check (verifies Temporal connectivity)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import socket; socket.create_connection(('temporal', 7233), timeout=1)" || exit 1
+
+# Run worker (update main.py to actual worker filename if different)
+CMD ["python", "worker.py"]
