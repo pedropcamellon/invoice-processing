@@ -1,153 +1,140 @@
-# Azure Durable Functions - Invoice Processing
+# Workflow Orchestration POC
 
-> **🎓 Learning Project**: This is an exploration project to learn Azure Durable Functions concepts, patterns, and best practices.
+> **🎓 Evaluation Project**: Comparative analysis of orchestration patterns for distributed workflows. Monorepo containing multiple implementations of the same invoice processing use case using different orchestration frameworks.
 
-## Overview
+## Purpose
 
-A Python-based Azure Durable Functions application demonstrating the **Fan-out/Fan-in** orchestration pattern through a practical invoice processing example.
+This project evaluates and compares orchestration frameworks for implementing distributed workflows. Rather than production code, this repository serves as a decision-making tool and learning resource for understanding the trade-offs between orchestration approaches.
 
 ### What You'll Learn
 
-- **Durable Functions Concepts**: Orchestrators, activities, and the replay pattern
-- **Blueprint Pattern**: Microsoft's recommended approach for organizing Azure Functions
-- **Fan-out/Fan-in**: Parallel processing with result aggregation
-- **Local Development**: Using Azurite storage emulator
-- **Real-world Workflow**: PDF splitting, parallel processing, data aggregation
+- **Multiple Patterns**: Fan-out/fan-in orchestration across different frameworks
+- **Comparative Analysis**: Strengths, weaknesses, and operational characteristics
+- **Decision Framework**: How to evaluate orchestration tools for your use case
+- **Implementation Patterns**: Real-world examples with the same business logic
 
-### How It Works
+## Repository Structure
 
+```
+workflow-orchestration-poc/
+├── README.md                          # This file - project overview
+├── docs/
+│   └── comparison-matrix.md           # Side-by-side framework analysis
+├── azure-durable-functions/           # ✅ Invoice Processing with Azure Durable Functions
+│   ├── README.md                      # ADF-specific setup & architecture
+│   ├── SPEC.md                        # Technical specifications
+│   ├── function_app.py                # Main orchestrator & HTTP triggers
+│   └── ...
+└── temporal/                          # ✅ Invoice Processing with Temporal
+    ├── README.md                      # Temporal-specific setup
+    ├── SPEC.md                        # Technical specifications
+    ├── services/
+    │   ├── orchestration/             # Workflow orchestrator
+    │   ├── upload_pdf/                # Upload service
+    │   ├── split_pdf/                 # Split service
+    │   ├── extract_invoice/           # Extract service (fan-out)
+    │   └── aggregate_invoice/         # Aggregate service (fan-in)
+    └── ...
+```
+
+## Quick Start
+
+### Azure Durable Functions Implementation
+
+To get started with the Azure Durable Functions implementation:
+
+```powershell
+cd azure-durable-functions
+uv sync
+azurite --silent --location . --debug ./azurite.log   # Terminal 1
+uv run func host start -p 8071                         # Terminal 2
+curl http://localhost:8071/api/startup                 # Initialize storage
+```
+
+See [azure-durable-functions/README.md](azure-durable-functions/README.md) for complete setup instructions.
+
+### Temporal Implementation
+
+*Completed* - See [temporal/README.md](temporal/README.md) for setup instructions.
+
+Implements the same invoice processing workflow using Temporal with distributed microservices communicating via task queues.
+
+## Comparison Framework
+
+### Decision Matrix
+
+| Aspect | Azure Durable Functions | Temporal | [Future: Others] |
+|--------|---|---|---|
+| **Learning Curve** | Moderate | Moderate | |
+| **Setup Complexity** | Easy (Azure emulator) | Moderate (Temporal server) | |
+| **Determinism Requirement** | Yes | Yes | |
+| **Debugging Experience** | VS Code native | Web dashboard | |
+| **Multi-service Decoupling** | HTTP between functions | Task queues (no direct RPC) | |
+| **Fan-out/Fan-in** | `context.task_all()` | `asyncio.gather()` | |
+| **Production Readiness** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | |
+| **Cost (Managed)** | Pay-per-execution | Fixed pricing | |
+| **Language Support** | TypeScript, Python | Go, Java, Python, TS | |
+
+For detailed analysis, see [docs/comparison-matrix.md](docs/comparison-matrix.md).
+
+## Use Case: Invoice Processing
+
+All implementations process the same workflow to ensure fair comparison:
+
+```
 1. Receive PDF invoice via HTTP
-2. Upload to blob storage and split into page images
-3. Process all pages **in parallel** (LLM extraction - mocked)
-4. Aggregate results into structured invoice data
+2. Upload to blob storage / external service
+3. Split PDF into page images
+4. Process all pages IN PARALLEL (LLM extraction - mocked)
+5. Aggregate results into structured invoice data
+6. Return to client
+```
 
-> 📖 See [SPEC.md](SPEC.md) for detailed technical specifications and architecture decisions.
+This pattern demonstrates:
+
+- **Fan-out/Fan-in**: Parallel processing at scale
+- **Error Handling**: Retry strategies and failure recovery
+- **Data Aggregation**: Combining partial results
+- **Integration Patterns**: External API coordination
 
 ## Prerequisites
 
 - **Python 3.11+**
-- **Azure Functions Core Tools** v4 (`npm install -g azure-functions-core-tools@4`)
-- **Azurite** storage emulator (`npm install -g azurite`)
 - **uv** package manager (recommended) or pip
+- **Azure Functions Core Tools** v4 (`npm install -g azure-functions-core-tools@4`)
+- **Azurite** storage emulator (`npm install -g azurite`) *for ADF implementation*
 
-## Quick Start
+## Testing & Validation
 
-### 1. Install Dependencies
+Each implementation includes:
 
-```powershell
-uv sync          # or: pip install -r requirements.txt
-```
-
-### 2. Start Azurite (Terminal 1)
-
-```powershell
-azurite --silent --location . --debug ./azurite.log
-```
-
-### 3. Start Function App (Terminal 2)
+- **API collections**: Bruno/Postman for manual testing
+- **Test scripts**: Verification and load testing tools
+- **Sample data**: Example invoices for testing
 
 ```powershell
-uv run func host start -p 8071
+# Load test (from implementation directory)
+uv run python tools/load_test.py --pdf-path data/sample-invoice.pdf
+
+# Quick verification
+uv run python tools/test_function.py --base-url http://localhost:8071
 ```
 
-### 4. Initialize Storage
+## Contributing
 
-```powershell
-curl http://localhost:8071/api/startup
-```
+This is a learning/evaluation repository. When adding new patterns:
 
-### 5. Process an Invoice
+1. Create a new subdirectory: `pattern-name/`
+2. Implement the same invoice processing workflow
+3. Update `docs/comparison-matrix.md` with findings
+4. Include comprehensive README and SPEC for the pattern
 
-```powershell
-curl -X POST http://localhost:8071/api/invoice/process `
-  -H "Content-Type: application/json" `
-  -d '{"invoice_id": "INV-2025-001", "pdf_path": "data/sample-invoice.pdf"}'
-```
+## Next Steps
 
-The response includes a `statusQueryGetUri` to check processing status.
-
-## Project Structure
-
-```
-├── function_app.py      # HTTP triggers + orchestrators
-├── activities/          # Modular activity blueprints
-│   ├── __init__.py      # Exports activity_blueprints list
-│   ├── upload_pdf.py    # PDF upload to blob storage
-│   ├── split_pdf.py     # PDF to images (PyMuPDF)
-│   ├── extract_invoice.py # LLM extraction (mocked)
-│   └── aggregate_invoice.py # Results aggregation
-├── storage_helper.py    # Blob storage utilities
-├── tools/               # Development utilities
-│   ├── test_function.py # Endpoint verification
-│   └── load_test.py     # Parallel workflow testing
-├── bruno/               # API testing collections
-└── data/                # Sample files (sample-invoice.pdf)
-```
-
-## Key Concepts Demonstrated
-
-### 1. The Replay Pattern
-
-Orchestrators **replay from the beginning** after each activity completes. History is stored in Azure Storage, and completed activities return instantly from history. This is why orchestrator code must be **deterministic**.
-
-### 2. Fan-out/Fan-in
-
-Process multiple items in parallel, then aggregate:
-
-```python
-# Fan-out: Create parallel tasks
-tasks = [context.call_activity("extract_page", page) for page in pages]
-
-# Fan-in: Wait for all
-results = yield context.task_all(tasks)
-```
-
-### 3. Blueprint Pattern
-
-Organize code into modular blueprints that are registered with the main app:
-
-```python
-# activities.py
-activities_bp = df.Blueprint()
-
-@activities_bp.activity_trigger(input_name="payload")
-def my_activity(payload): ...
-
-# function_app.py
-myApp.register_functions(activities_bp)
-```
-
-## Testing
-
-### Quick Verification
-
-```powershell
-uv run python tools/test_function.py --base-url http://localhost:8071 --pdf-path data/sample-invoice.pdf
-```
-
-### Load Testing
-
-```powershell
-uv run python tools/load_test.py --pdf-path data/sample-invoice.pdf --total 10 --batch-size 3
-```
-
-### Manual API Testing
-
-Bruno API collections are included in `bruno/invoice_processing/` for endpoint testing.
-
-## Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "No job functions found" | Run `uv sync` and verify Python 3.11+ |
-| Connection errors | Ensure Azurite is running before starting function app |
-| Orchestration stuck | Check Azurite logs at `./azurite.log` |
-
-## Learn More
-
-- [Azure Durable Functions Documentation](https://learn.microsoft.com/azure/azure-functions/durable/)
-- [Durable Functions Patterns](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview)
-- [Blueprint Pattern Documentation](https://learn.microsoft.com/azure/azure-functions/functions-reference-python#blueprints)
+- [ ] ~~Add Temporal implementation to `temporal/`~~ ✅ **Complete**
+- [ ] Expand comparison matrix with additional evaluation criteria
+- [ ] Add AWS Step Functions implementation
+- [ ] Create architecture decision record (ADR) for framework selection
 
 ## License
 
