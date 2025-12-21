@@ -1,0 +1,17 @@
+# Upload PDF Worker - Stores PDF in blob storage
+services:
+  upload-pdf-worker:
+    build:
+      context: ..
+      dockerfile: upload_pdf/Dockerfile
+    container_name: upload-pdf-worker
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TASK_QUEUE: upload-pdf-q
+      PYTHONUNBUFFERED: "1"
+    networks:
+      - temporal-network
+    restart: unless-stopped
