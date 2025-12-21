@@ -1,0 +1,17 @@
+# Extract Invoice Worker - Extracts data from page images (fan-out)
+services:
+  extract-invoice-worker:
+    build:
+      context: ..
+      dockerfile: extract_invoice/Dockerfile
+    container_name: extract-invoice-worker
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TASK_QUEUE: extract-invoice-q
+      PYTHONUNBUFFERED: "1"
+    networks:
+      - temporal-network
+    restart: unless-stopped
