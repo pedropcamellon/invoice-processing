@@ -1,0 +1,140 @@
+# =============================================================================
+# Temporal Invoice Processing POC - Docker Compose
+# =============================================================================
+# Complete stack for invoice processing with Temporal orchestration.
+#
+# Pipeline:
+#   InvoiceProcessingWorkflow (orchestration-q)
+#   ├── upload_pdf_activity (upload-pdf-q)
+#   ├── split_pdf_activity (split-pdf-q)
+#   ├── asyncio.gather (PARALLEL - fan-out)
+#   │   └── extract_invoice_activity × N pages (extract-invoice-q)
+#   └── aggregate_invoice_activity (aggregate-invoice-q - fan-in)
+#
+# Usage:
+#   docker compose up --build              # Start all services
+#   docker compose run --rm runner         # Execute workflow
+#   docker compose down -v                 # Clean up
+#
+# Usage (separate terminals for cleaner logs):
+#   Terminal 1 - Infrastructure:
+#     docker compose up postgres temporal temporal-ui
+#   Terminal 2 - Workers:
+#     docker compose up orchestration-worker upload-pdf-worker split-pdf-worker extract-invoice-worker aggregate-invoice-worker
+#
+# Execute workflow:
+#   docker compose run --rm runner
+#
+# Temporal Web UI: http://localhost:8233
+#
+# =============================================================================
+
+include:
+  # Orchestration worker - Coordinates invoice processing workflow
+  - path: ./services/orchestration/docker-compose.yml
+  # Upload PDF worker - Stores PDF in blob storage
+  - path: ./services/upload_pdf/docker-compose.yml
+  # Split PDF worker - Splits PDF into pages
+  - path: ./services/split_pdf/docker-compose.yml
+  # Extract Invoice worker - Extracts data from pages (fan-out)
+  - path: ./services/extract_invoice/docker-compose.yml
+  # Aggregate Invoice worker - Combines results (fan-in)
+  - path: ./services/aggregate_invoice/docker-compose.yml
+
+services:
+  # ---------------------------------------------------------------------------
+  # Temporal Database (PostgreSQL)
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: temporal-postgres
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5432:5432"
+    volumes:
+      - temporal-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - temporal-network
+
+  # ---------------------------------------------------------------------------
+  # Temporal Server
+  # ---------------------------------------------------------------------------
+  temporal:
+    image: temporalio/auto-setup:latest
+    container_name: temporal-server
+    ports:
+      - "7233:7233"
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - temporal-network
+
+  # ---------------------------------------------------------------------------
+  # Temporal Web UI
+  # ---------------------------------------------------------------------------
+  temporal-ui:
+    image: temporalio/ui:latest
+    container_name: temporal-ui
+    ports:
+      - "8233:8080"
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_UI_PORT=8080
+      - TEMPORAL_DEFAULT_NAMESPACE=default
+    depends_on:
+      - temporal
+    networks:
+      - temporal-network
+
+  # ---------------------------------------------------------------------------
+  # Runner - One-off workflow execution
+  # ---------------------------------------------------------------------------
+  # Usage: docker compose run --rm runner
+  runner:
+    build:
+      context: ./services
+      dockerfile: orchestration/Dockerfile
+    container_name: temporal-runner
+    entrypoint: ["python", "main.py"]
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - temporal
+    profiles:
+      - tools
+    networks:
+      - temporal-network
+
+# =============================================================================
+# Networks & Volumes
+# =============================================================================
+networks:
+  temporal-network:
+    driver: bridge
+    name: temporal-invoice-network
+
+volumes:
+  temporal-postgres-data:
+    name: temporal-invoice-postgres-data

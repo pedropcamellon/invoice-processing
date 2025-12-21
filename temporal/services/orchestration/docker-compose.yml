@@ -1,0 +1,17 @@
+# Orchestration Worker - Coordinates Invoice Processing Workflow
+services:
+  orchestration-worker:
+    build:
+      context: ..
+      dockerfile: orchestration/Dockerfile
+    container_name: orchestration-worker
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TASK_QUEUE: orchestration-q
+      PYTHONUNBUFFERED: "1"
+    networks:
+      - temporal-network
+    restart: unless-stopped

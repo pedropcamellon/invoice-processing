@@ -1,0 +1,15 @@
+[project]
+name = "orchestration"
+version = "0.1.0"
+description = "Temporal workflow orchestrator for PDF processing pipeline"
+authors = [{ name = "Pedro Camellon", email = "pedro.camellon@mii.com" }]
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "pydantic>=2.11.10",
+    "temporalio>=1.20.0",
+]
+
+[tool.uv.sources]
+mitek-ai-utils = { workspace = true }
+planextraction-datamodels = { workspace = true }

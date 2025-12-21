@@ -1,0 +1,57 @@
+# =============================================================================
+# Docker Ignore - Temporal POC
+# =============================================================================
+# Excludes files that shouldn't be in the Docker build context
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# UV/pip
+.uv/
+uv.lock
+pip-log.txt
+
+# Git
+.git/
+.gitignore
+
+# Tests
+tests/
+pytest_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation (not needed in container)
+*.md
+!README.md
+
+# Local development files
+run_demo.py
+*.ipynb
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporal data (local dev only)
+temporal-data/
