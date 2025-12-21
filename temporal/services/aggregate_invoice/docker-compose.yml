@@ -1,0 +1,17 @@
+# Aggregate Invoice Worker - Combines results (fan-in)
+services:
+  aggregate-invoice-worker:
+    build:
+      context: ..
+      dockerfile: aggregate_invoice/Dockerfile
+    container_name: aggregate-invoice-worker
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TASK_QUEUE: aggregate-invoice-q
+      PYTHONUNBUFFERED: "1"
+    networks:
+      - temporal-network
+    restart: unless-stopped
