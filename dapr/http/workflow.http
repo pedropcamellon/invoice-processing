@@ -1,0 +1,24 @@
+### Start invoice workflow
+POST http://localhost:8080/api/workflows/invoice
+Content-Type: application/json
+
+{
+  "invoice_id": "INV-2025-CLI",
+  "pdf_path": "data/sample-invoice.pdf"
+}
+
+### Check workflow status
+GET http://localhost:8080/api/workflows/INV-2025-CLI
+Accept: application/json
+
+### Raise external event (example)
+POST http://localhost:8080/api/workflows/childInstanceID/raise-event/event1
+Content-Type: application/json
+
+{
+  "approved": true,
+  "comments": "Approved from .http file"
+}
+
+### Terminate workflow (cleanup)
+POST http://localhost:8080/api/workflows/INV-2025-CLI/terminate

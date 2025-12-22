@@ -1,0 +1,263 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - dapr-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  placement:
+    image: daprio/dapr:1.16.0
+    command: ["./placement", "-port", "50005"]
+    ports:
+      - "50005:50005"
+    networks:
+      - dapr-network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Dapr Dashboard for workflow visualization
+  dashboard:
+    image: daprio/dashboard:latest
+    ports:
+      - "9999:8080"
+    networks:
+      - dapr-network
+
+  # ----------------------------------------
+  # Workflow App + Sidecar
+  # ----------------------------------------
+  workflow-app:
+    build:
+      context: .
+      dockerfile: workflow_app/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../data:/data:ro
+      - artifacts:/artifacts
+    environment:
+      - DAPR_HTTP_PORT=3500
+    depends_on:
+      redis:
+        condition: service_healthy
+      placement:
+        condition: service_started
+    networks:
+      - dapr-network
+    develop:
+      watch:
+        - path: ./workflow_app/app.py
+          target: /app/app.py
+          action: sync+restart
+        - path: ./workflow_app/workflows/
+          target: /app/workflows/
+          action: sync+restart
+        - path: ./shared/
+          target: /shared/
+          action: rebuild
+
+  workflow-app-dapr:
+    image: daprio/daprd:1.16.0
+    command:
+      - "./daprd"
+      - "-app-id"
+      - "workflow-app"
+      - "-app-port"
+      - "8080"
+      - "-placement-host-address"
+      - "placement:50005"
+      - "-resources-path"
+      - "/components"
+    volumes:
+      - ./components:/components:ro
+    network_mode: "service:workflow-app"
+    depends_on:
+      - workflow-app
+
+  # ----------------------------------------
+  # Upload Service + Sidecar
+  # ----------------------------------------
+  upload-service:
+    build:
+      context: .
+      dockerfile: services/upload_service/Dockerfile
+    ports:
+      - "7101:7101"
+    volumes:
+      - ../data:/data:ro
+      - artifacts:/artifacts
+    environment:
+      - ARTIFACT_DIR=/artifacts
+      - SOURCE_BASE_DIR=/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - dapr-network
+    develop:
+      watch:
+        - path: ./services/upload_service/app.py
+          target: /app/app.py
+          action: sync+restart
+        - path: ./shared/
+          target: /shared/
+          action: rebuild
+
+  upload-service-dapr:
+    image: daprio/daprd:1.16.0
+    command:
+      - "./daprd"
+      - "-app-id"
+      - "upload-service"
+      - "-app-port"
+      - "7101"
+      - "-placement-host-address"
+      - "placement:50005"
+      - "-resources-path"
+      - "/components"
+    volumes:
+      - ./components:/components:ro
+    network_mode: "service:upload-service"
+    depends_on:
+      - upload-service
+
+  # ----------------------------------------
+  # Split Service + Sidecar
+  # ----------------------------------------
+  split-service:
+    build:
+      context: .
+      dockerfile: services/split_service/Dockerfile
+    ports:
+      - "7201:7201"
+    volumes:
+      - artifacts:/artifacts
+    environment:
+      - ARTIFACT_DIR=/artifacts
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - dapr-network
+    develop:
+      watch:
+        - path: ./services/split_service/app.py
+          target: /app/app.py
+          action: sync+restart
+        - path: ./shared/
+          target: /shared/
+          action: rebuild
+
+  split-service-dapr:
+    image: daprio/daprd:1.16.0
+    command:
+      - "./daprd"
+      - "-app-id"
+      - "split-service"
+      - "-app-port"
+      - "7201"
+      - "-placement-host-address"
+      - "placement:50005"
+      - "-resources-path"
+      - "/components"
+    volumes:
+      - ./components:/components:ro
+    network_mode: "service:split-service"
+    depends_on:
+      - split-service
+
+  # ----------------------------------------
+  # Extract Service + Sidecar
+  # ----------------------------------------
+  extract-service:
+    build:
+      context: .
+      dockerfile: services/extract_service/Dockerfile
+    ports:
+      - "7301:7301"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - dapr-network
+    develop:
+      watch:
+        - path: ./services/extract_service/app.py
+          target: /app/app.py
+          action: sync+restart
+        - path: ./shared/
+          target: /shared/
+          action: rebuild
+
+  extract-service-dapr:
+    image: daprio/daprd:1.16.0
+    command:
+      - "./daprd"
+      - "-app-id"
+      - "extract-service"
+      - "-app-port"
+      - "7301"
+      - "-placement-host-address"
+      - "placement:50005"
+      - "-resources-path"
+      - "/components"
+    volumes:
+      - ./components:/components:ro
+    network_mode: "service:extract-service"
+    depends_on:
+      - extract-service
+
+  # ----------------------------------------
+  # Aggregate Service + Sidecar
+  # ----------------------------------------
+  aggregate-service:
+    build:
+      context: .
+      dockerfile: services/aggregate_service/Dockerfile
+    ports:
+      - "7401:7401"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - dapr-network
+    develop:
+      watch:
+        - path: ./services/aggregate_service/app.py
+          target: /app/app.py
+          action: sync+restart
+        - path: ./shared/
+          target: /shared/
+          action: rebuild
+
+  aggregate-service-dapr:
+    image: daprio/daprd:1.16.0
+    command:
+      - "./daprd"
+      - "-app-id"
+      - "aggregate-service"
+      - "-app-port"
+      - "7401"
+      - "-placement-host-address"
+      - "placement:50005"
+      - "-resources-path"
+      - "/components"
+    volumes:
+      - ./components:/components:ro
+    network_mode: "service:aggregate-service"
+    depends_on:
+      - aggregate-service
+
+networks:
+  dapr-network:
+    driver: bridge
+
+volumes:
+  artifacts:

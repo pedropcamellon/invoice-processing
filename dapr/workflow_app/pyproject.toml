@@ -1,0 +1,22 @@
+[project]
+name = "dapr-workflow-app"
+version = "0.1.0"
+description = "Workflow host for the Dapr invoice processing example"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "dapr>=1.13",
+    "dapr-ext-workflow>=1.13",
+    "pydantic>=2.6",
+]
+
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["workflows"]
+
+[tool.uv]
+managed = true
