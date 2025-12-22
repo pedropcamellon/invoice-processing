@@ -42,7 +42,7 @@ async def extract_page(page: PageMetadata) -> PageExtraction:
     )
 
 
-@app.get("/healthz")
+@app.get("/health")
 async def health() -> JSONResponse:
     return JSONResponse({"status": "ok"})
 
