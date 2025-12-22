@@ -25,7 +25,7 @@ workflow-orchestration-poc/
 │   ├── SPEC.md                        # Technical specifications
 │   ├── function_app.py                # Main orchestrator & HTTP triggers
 │   └── ...
-└── temporal/                          # ✅ Invoice Processing with Temporal
+├── temporal/                          # ✅ Invoice Processing with Temporal
     ├── README.md                      # Temporal-specific setup
     ├── SPEC.md                        # Technical specifications
     ├── services/
@@ -35,6 +35,11 @@ workflow-orchestration-poc/
     │   ├── extract_invoice/           # Extract service (fan-out)
     │   └── aggregate_invoice/         # Aggregate service (fan-in)
     └── ...
+└── prefect/                           # ✅ Invoice Processing with Prefect
+    ├── README.md                      # Prefect-specific quick start
+    ├── SPEC.md                        # Technical specification and architecture
+    ├── docker-compose.yml             # Prefect server stack
+    └── src/prefect_invoice/           # Flow + task implementations
 ```
 
 ## Quick Start
@@ -55,9 +60,15 @@ See [azure-durable-functions/README.md](azure-durable-functions/README.md) for c
 
 ### Temporal Implementation
 
-*Completed* - See [temporal/README.md](temporal/README.md) for setup instructions.
+See [temporal/README.md](temporal/README.md) for setup instructions.
 
 Implements the same invoice processing workflow using Temporal with distributed microservices communicating via task queues.
+
+### Prefect Implementation
+
+See [prefect/README.md](prefect/README.md) for instructions.
+
+Demonstrates the invoice workflow using Prefect 3 with a self-hosted server (PostgreSQL + Redis) and Prefect flow/tasks representing the services.
 
 ## Comparison Framework
 

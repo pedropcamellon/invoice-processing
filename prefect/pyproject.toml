@@ -1,0 +1,23 @@
+[project]
+name = "prefect-invoice"
+version = "0.1.0"
+description = "Prefect-based invoice processing workflow"
+authors = [{ name = "Workflow Orchestration POC" }]
+requires-python = ">=3.11"
+dependencies = [
+    "prefect>=3.0.0",
+    "pydantic>=2.11.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+
+[project.scripts]
+prefect-invoice = "prefect_invoice.cli:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+managed = true

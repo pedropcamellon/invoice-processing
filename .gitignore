@@ -1,0 +1,55 @@
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editor / workspace
+.vscode/
+.idea/
+*.code-workspace
+
+# Python caches & build artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.tox/
+.uv/
+
+# Virtual environments & local env files
+.venv/
+venv/
+env/
+.env
+.env.*
+*.env
+
+# Coverage / test outputs
+.coverage
+.coverage.*
+htmlcov/
+
+# Prefect local state
+.prefect/
+orion.db
+orion.db-shm
+orion.db-wal
+
+# Logs & misc
+logs/
+*.log
+*.sqlite3
+
+# Azurite emulator artifacts
+azure-durable-functions/__azurite_db_*
+azure-durable-functions/__blobstorage__/
+azure-durable-functions/__queuestorage__/
